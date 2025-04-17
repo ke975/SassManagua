@@ -5,15 +5,20 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\InventarioController;
-use App\Http\Controllers\VentaController;
 use App\Http\Controllers\CajaController;
+use App\Http\Controllers\BodegaController;
+use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\VentaController;
+
 // Rutas públicas (login)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 
+Route::resource('users', UserController::class);
 // Rutas protegidas por autenticación
 Route::middleware('auth')->group(function () {
 
+  
     // Cerrar sesión
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
@@ -46,7 +51,7 @@ Route::middleware('auth')->group(function () {
     })->name('bodeguero.panel');  
 
     // CRUD de usuarios solo accesible a usuarios autenticados
-    Route::resource('users', UserController::class);
+
 
 // Mostrar lista de proveedores
 Route::get('proveedores', [ProveedorController::class, 'index'])->name('proveedores.index');
@@ -67,5 +72,11 @@ Route::put('proveedores/{id}', [ProveedorController::class, 'update'])->name('pr
 Route::delete('proveedores/{id}', [ProveedorController::class, 'destroy'])->name('proveedores.destroy');
 Route::resource('inventario', InventarioController::class);
 Route::resource('cajas', CajaController::class);
+Route::resource('bodegas', BodegaController::class);
+
+Route::resource('clientes', ClienteController::class);
+Route::resource('ventas', VentaController::class);
+Route::get('/ventas/{venta}/factura', [App\Http\Controllers\VentaController::class, 'factura'])->name('ventas.factura');
 
 });
+

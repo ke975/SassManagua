@@ -17,7 +17,7 @@
                     <div class="card-body text-center">
                         <i class="bi bi-truck fs-1 text-primary"></i>
                         <h5 class="card-title mt-2">Proveedores</h5>
-                        <a href="#" class="btn btn-outline-primary btn-sm mt-2">Ir</a>
+                        <a href="/proveedores" class="btn btn-outline-primary btn-sm mt-2">Ir</a>
                     </div>
                 </div>
             </div>
@@ -57,7 +57,7 @@
                     <div class="card-body text-center">
                         <i class="bi bi-box-seam fs-1 text-info"></i>
                         <h5 class="card-title mt-2">Bodega</h5>
-                        <a href="#" class="btn btn-outline-info btn-sm mt-2">Ir</a>
+                        <a href="/bodegas" class="btn btn-outline-info btn-sm mt-2">Ir</a>
                     </div>
                 </div>
             </div>
@@ -67,7 +67,7 @@
                     <div class="card-body text-center">
                         <i class="bi bi-clipboard-data fs-1 text-secondary"></i>
                         <h5 class="card-title mt-2">Inventario</h5>
-                        <a href="#" class="btn btn-outline-secondary btn-sm mt-2">Ir</a>
+                        <a href="/inventario" class="btn btn-outline-secondary btn-sm mt-2">Ir</a>
                     </div>
                 </div>
             </div>
@@ -112,7 +112,7 @@
             <div class="card-body text-center">
                 <i class="bi bi-box-seam fs-1 text-info"></i>
                 <h5 class="card-title mt-2">Bodega</h5>
-                <a href="{{ route('bodeguero.panel') }}" class="btn btn-outline-info btn-sm mt-2">Ir</a>
+                <a href="/bodegas" class="btn btn-outline-info btn-sm mt-2">Ir</a>
             </div>
         </div>
     </div>
