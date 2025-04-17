@@ -76,6 +76,12 @@
     const typingDelay = 300; // milisegundos para considerar que se terminó de escribir
     const inputCodigo = document.getElementById('codigo_barra');
 
+    inputCodigo.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+        }
+    });
+
     inputCodigo.addEventListener('input', function () {
         clearTimeout(typingTimer);
         typingTimer = setTimeout(() => {

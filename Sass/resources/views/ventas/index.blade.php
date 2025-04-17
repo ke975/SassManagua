@@ -7,7 +7,21 @@
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
-
+    <form method="GET" action="{{ route('ventas.index') }}" class="row g-3 align-items-center mb-4">
+        <div class="col-md-3">
+            <label for="fecha" class="form-label">Filtrar por fecha:</label>
+            <input type="date" id="fecha" name="fecha" value="{{ $fecha }}" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label for="cliente" class="form-label">Filtrar por cliente:</label>
+            <input type="text" id="cliente" name="cliente" value="{{ $cliente }}" class="form-control" placeholder="Nombre del cliente">
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button type="submit" class="btn btn-primary w-100">Buscar</button>
+        </div>
+    </form>
+    
+    
     {{-- Total del día --}}
     <div class="alert alert-primary text-center">
         <strong>Total de ventas hoy ({{ \Carbon\Carbon::today()->format('d/m/Y') }}):</strong>
@@ -65,6 +79,9 @@
                     </tbody>
                 </table>
             </div>
+            {{ $ventas->appends(['fecha' => $fecha, 'cliente' => $cliente])->links(('pagination::bootstrap-5')) }}
+            
+            
         </div>
     </div>
 </div>
@@ -79,7 +96,7 @@
     const data = ventasData.map(v => v.total_ventas);
 
     new Chart(ctx, {
-        type: 'bar',
+        type: 'polarArea',
         data: {
             labels: labels,
             datasets: [{

@@ -16,21 +16,34 @@ use Carbon\Carbon;
 class VentaController extends Controller
 {
     // Mostrar todas las ventas
-    public function index()
+    public function index(Request $request)
     {
-        $ventas = Venta::with('cliente', 'caja')->get();
-
-        // Agrupar ventas por fecha
+        $fecha = $request->input('fecha') ?? Carbon::today()->toDateString();
+        $cliente = $request->input('cliente');
+    
+        $ventasQuery = Venta::with('cliente', 'caja')
+            ->whereDate('created_at', $fecha);
+    
+        // Si hay filtro por cliente, aplicarlo
+        if (!empty($cliente)) {
+            $ventasQuery->whereHas('cliente', function ($q) use ($cliente) {
+                $q->where('nombre', 'like', '%' . $cliente . '%');
+            });
+        }
+    
+        $ventas = $ventasQuery->orderBy('created_at', 'desc')->paginate(20);
+    
+        // Para mostrar resumen de ventas por día
         $ventasPorDia = Venta::select(DB::raw('DATE(created_at) as fecha'), DB::raw('SUM(total) as total_ventas'))
             ->groupBy(DB::raw('DATE(created_at)'))
             ->orderBy('fecha', 'desc')
             ->get();
+            
     
-        // Total del día actual
-        $hoy = Carbon::today()->toDateString();
-        $totalHoy = Venta::whereDate('created_at', $hoy)->sum('total');
+        // Total solo de las ventas que coincidan con el filtro actual
+        $totalHoy = $ventasQuery->sum('total');
     
-        return view('ventas.index', compact('ventas', 'ventasPorDia', 'totalHoy'));
+        return view('ventas.index', compact('ventas', 'ventasPorDia', 'totalHoy', 'fecha', 'cliente'));
     }
 
     // Mostrar el formulario de creación
@@ -118,58 +131,78 @@ class VentaController extends Controller
     
 
 
+
     public function update(Request $request, $id)
     {
-        // Encontramos la venta a actualizar
         $venta = Venta::findOrFail($id);
     
-        // Validación
         $request->validate([
             'caja_id' => 'required|exists:cajas,id',
+            'total' => 'required|numeric|min:0.01',
             'productos' => 'required|array|min:1',
             'productos.*.id' => 'required|exists:inventarios,id',
             'productos.*.cantidad' => 'required|integer|min:1',
             'productos.*.precio_unitario' => 'required|numeric|min:0',
         ]);
     
-        // Actualizamos la venta con los nuevos datos
+        // Guarda valores anteriores
+        $cajaAnteriorId = $venta->caja_id;
+        $totalAnterior = $venta->total;
+    
+        // Actualizar la venta
         $venta->update([
             'caja_id' => $request->caja_id,
-            'total' => $request->total,  // El total debe ser calculado antes de ser enviado
+            'total' => $request->total,
         ]);
     
-        // Obtener los IDs de productos actuales (de inventarios)
+        // Actualizar el monto en la(s) caja(s)
+        if ($cajaAnteriorId != $request->caja_id) {
+            // Si cambió de caja, revertimos en la anterior y sumamos en la nueva
+            $cajaAnterior = Caja::find($cajaAnteriorId);
+            $cajaNueva = Caja::findOrFail($request->caja_id);
+    
+            if ($cajaAnterior) {
+                $cajaAnterior->decrement('monto_actual', $totalAnterior);
+            }
+    
+            $cajaNueva->increment('monto_actual', $request->total);
+        } else {
+            // Si es la misma caja, solo ajustamos el total
+            $diferencia = $request->total - $totalAnterior;
+            $caja = Caja::findOrFail($request->caja_id);
+            $caja->increment('monto_actual', $diferencia);
+        }
+    
+        // Obtener IDs actuales
         $productoIds = collect($request->productos)->pluck('id')->toArray();
     
-        // Eliminar los detalles de productos que ya no están en la venta
+        // Eliminar detalles que ya no están
         $venta->detalles()->whereNotIn('producto_id', $productoIds)->delete();
     
-        // Actualizar o crear detalles de venta para cada producto
+        // Procesar productos
         foreach ($request->productos as $productoData) {
-            // Obtener el detalle existente (si lo hay)
-            $detalleExistente = $venta->detalles()->where('producto_id', $productoData['id'])->first();
+            $productoId = $productoData['id'];
+            $nuevaCantidad = $productoData['cantidad'];
     
-            // Ajustar el stock del inventario
-            $inventario = Inventario::findOrFail($productoData['id']);
+            $detalleExistente = $venta->detalles()->where('producto_id', $productoId)->first();
+            $inventario = Inventario::findOrFail($productoId);
+    
             if ($detalleExistente) {
-                // Si el detalle ya existía, revertimos el stock anterior
                 $inventario->stock += $detalleExistente->cantidad;
             }
-            // Reducimos el stock según la nueva cantidad
-            $inventario->stock -= $productoData['cantidad'];
+    
+            $inventario->stock -= $nuevaCantidad;
             $inventario->save();
     
-            // Usamos `updateOrCreate` para actualizar o crear el detalle
             $venta->detalles()->updateOrCreate(
-                ['producto_id' => $productoData['id']], // Validamos si el producto ya existe en los detalles
+                ['producto_id' => $productoId],
                 [
-                    'cantidad' => $productoData['cantidad'], 
-                    'precio_unitario' => $productoData['precio_unitario']  // Guardamos el precio unitario
+                    'cantidad' => $nuevaCantidad,
+                    'precio_unitario' => $productoData['precio_unitario'],
                 ]
             );
         }
     
-        // Redirigimos al listado de ventas con un mensaje de éxito
         return redirect()->route('ventas.index')->with('success', 'Venta actualizada con éxito');
     }
     

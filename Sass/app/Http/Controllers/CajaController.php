@@ -9,7 +9,7 @@ class CajaController extends Controller
 {
     public function index()
     {
-        $cajas = Caja::all();
+        $cajas = Caja::paginate(10);
         return view('cajas.index', compact('cajas'));
     }
 
