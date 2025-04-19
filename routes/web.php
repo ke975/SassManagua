@@ -11,7 +11,7 @@ use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\VentaController;
 
 // Rutas públicas (login)
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::get('/', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 
 Route::resource('users', UserController::class);
